@@ -1,0 +1,78 @@
+{
+  "id": "python-717166",
+  "title": "Python",
+  "description": "A medium difficulty quiz on Python syntax.",
+  "category": "Python syntax",
+  "difficulty": "Medium",
+  "durationMinutes": 10,
+  "schedule": {
+    "hasSchedule": true,
+    "startTime": "2026-10-23T11:23:00.000Z",
+    "endTime": "2026-10-23T19:23:00.000Z"
+  },
+  "status": "published",
+  "createdAt": "2026-10-23T11:25:17.166Z",
+  "updatedAt": "2026-10-23T11:25:17.166Z",
+  "questions": [
+    {
+      "id": 1,
+      "question": "What is the output of: print(2 ** 3 * 2) ?",
+      "options": [
+        "16",
+        "12",
+        "8",
+        "10"
+      ],
+      "correctAnswer": 0,
+      "explanation": "2**3 equals 8, and 8*2 equals 16."
+    },
+    {
+      "id": 2,
+      "question": "Which of the following is a valid way to define a function that takes a variable number of positional arguments?",
+      "options": [
+        "def func(*args):",
+        "def func(args*):",
+        "def func(**args):",
+        "def func(args):"
+      ],
+      "correctAnswer": 0,
+      "explanation": "The *args syntax collects extra positional arguments into a tuple."
+    },
+    {
+      "id": 3,
+      "question": "In Python, what does the // operator do?",
+      "options": [
+        "Performs floating-point division",
+        "Performs integer (floor) division",
+        "Calculates remainder",
+        "Performs exponentiation"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The // operator returns the floor of the division result, discarding any fractional part."
+    },
+    {
+      "id": 4,
+      "question": "Which statement correctly creates a list comprehension that squares numbers 0 through 4?",
+      "options": [
+        "[x**2 for x in range(5)]",
+        "(x**2 for x in range(5))",
+        "{x**2 for x in range(5)}",
+        "[x*2 for x in range(5)]"
+      ],
+      "correctAnswer": 0,
+      "explanation": "[x**2 for x in range(5)] generates a list of squares for 0‑4."
+    },
+    {
+      "id": 5,
+      "question": "What is the result of evaluating the expression: 'Hello' + str(5) in Python?",
+      "options": [
+        "Hello5",
+        "Hello",
+        "Error",
+        "5Hello"
+      ],
+      "correctAnswer": 0,
+      "explanation": "str(5) converts the integer 5 to the string '5', which concatenates with 'Hello' to form 'Hello5'."
+    }
+  ]
+}

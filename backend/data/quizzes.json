@@ -1,0 +1,29 @@
+[
+  {
+    "id": "electron-basics",
+    "title": "Electron & System Architecture",
+    "description": "Fundamental concepts of Electron processes, IPC communication, BrowserWindow, and preload scripts.",
+    "durationMinutes": 10,
+    "category": "Electron",
+    "questionCount": 5,
+    "file": "electron-basics.json"
+  },
+  {
+    "id": "javascript-core",
+    "title": "JavaScript Core & Asynchronous Concepts",
+    "description": "Evaluate understanding of closures, promises, event loop microtasks, and modern ES features.",
+    "durationMinutes": 10,
+    "category": "JavaScript",
+    "questionCount": 5,
+    "file": "javascript-core.json"
+  },
+  {
+    "id": "react-fundamentals",
+    "title": "React Hooks & Component Lifecycle",
+    "description": "Test your mastery of useState, useEffect, cleanups, props, and React virtual DOM principles.",
+    "durationMinutes": 10,
+    "category": "React",
+    "questionCount": 5,
+    "file": "react-fundamentals.json"
+  }
+]
