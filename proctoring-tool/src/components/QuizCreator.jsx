@@ -6,9 +6,10 @@ export default function QuizCreator({ initialQuiz = null, onSaved, onCancel }) {
   // Form Configuration State
   const [title, setTitle] = useState(initialQuiz?.title || '');
   const [topic, setTopic] = useState(initialQuiz?.category || '');
+  const [description, setDescription] = useState(initialQuiz?.description || '');
   const [numQuestions, setNumQuestions] = useState(initialQuiz?.questions?.length || 5);
   const [difficulty, setDifficulty] = useState(initialQuiz?.difficulty || 'Medium');
-  const [questionType, setQuestionType] = useState('MCQ');
+  const [questionType, setQuestionType] = useState(initialQuiz?.questionType || 'MCQ');
   const [timeLimit, setTimeLimit] = useState(initialQuiz?.durationMinutes || 10);
 
   // Unique Tracking ID to differentiate quizzes even with the same title
@@ -103,6 +104,9 @@ export default function QuizCreator({ initialQuiz = null, onSaved, onCancel }) {
       if (res.quiz) {
         setQuizData(res.quiz);
         if (!title.trim()) setTitle(res.quiz.title);
+        if (!description.trim() && res.quiz.description) {
+          setDescription(res.quiz.description);
+        }
         setSuccessMsg(`Generated ${res.quiz.questions.length} questions successfully! You can now review, edit, or publish.`);
       }
     } catch (err) {
@@ -221,9 +225,10 @@ export default function QuizCreator({ initialQuiz = null, onSaved, onCancel }) {
       const payload = {
         id: initialQuiz?.id || quizData?.id || quizTrackingId,
         title: title.trim() || quizData?.title,
-        description: quizData?.description || `Assessment on ${topic || title}`,
+        description: description.trim() || quizData?.description || `Assessment on ${topic || title}`,
         category: topic.trim() || quizData?.category || 'Custom',
-        difficulty: quizData?.difficulty || difficulty,
+        difficulty: difficulty || quizData?.difficulty || 'Medium',
+        questionType: questionType || quizData?.questionType || 'MCQ',
         durationMinutes: Number(timeLimit) || Number(quizData?.durationMinutes) || 10,
         schedule: {
           hasSchedule: Boolean(hasSchedule),
@@ -374,6 +379,21 @@ export default function QuizCreator({ initialQuiz = null, onSaved, onCancel }) {
               value={timeLimit}
               onChange={(e) => handleTimeLimitChange(Number(e.target.value))}
               placeholder="Custom allotted minutes"
+            />
+          </div>
+
+          <div className="input-group" style={{ gridColumn: '1 / -1' }}>
+            <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>📝 Quiz Description & Further Instructions</span>
+              <span style={{ fontSize: '11px', color: '#64748b' }}>Shown to students on the Step 4 Instructions page</span>
+            </label>
+            <textarea
+              className="input-field"
+              rows={3}
+              placeholder="Add specific instructions, allowed tools (e.g. calculator), or rules for candidates here..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              style={{ resize: 'vertical', minHeight: '80px', lineHeight: '1.5' }}
             />
           </div>
         </div>

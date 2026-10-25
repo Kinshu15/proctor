@@ -286,6 +286,7 @@ app.post("/api/quizzes/save", (req, res) => {
       description: (quizData.description || "").trim(),
       category: (quizData.category || "Custom").trim(),
       difficulty: quizData.difficulty || "Medium",
+      questionType: quizData.questionType || "MCQ",
       durationMinutes: Number(quizData.durationMinutes) || 10,
       schedule: {
         hasSchedule: Boolean(quizData.schedule?.hasSchedule),

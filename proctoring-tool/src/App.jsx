@@ -1539,6 +1539,17 @@ function App() {
                         </div>
                       </div>
                     </div>
+                    {/* Instructor Custom Instructions / Description */}
+                    {currentQuiz?.description && currentQuiz.description.trim() && (
+                      <div className="instructions-custom-note-box" style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderLeft: '4px solid #16a34a', borderRadius: '10px', padding: '14px 18px', marginBottom: '20px', textAlign: 'left' }}>
+                        <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#15803d', margin: '0 0 6px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          📋 Instructor's Quiz Instructions
+                        </h4>
+                        <p style={{ fontSize: '13px', color: '#166534', margin: 0, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                          {currentQuiz.description}
+                        </p>
+                      </div>
+                    )}
 
                     {/* Exam Rules & Guidelines Card */}
                     <div className="instructions-guidelines-box">
@@ -1747,16 +1758,6 @@ function App() {
               >
                 {loading ? 'Submitting...' : 'Submit Exam'}
               </button>
-            </div>
-
-            {/* Progress bar */}
-            <div className="progress-bar-container">
-              <div
-                className="progress-bar-fill"
-                style={{
-                  width: `${((currentIndex + 1) / questions.length) * 100}%`,
-                }}
-              ></div>
             </div>
 
             {/* Question Text */}
