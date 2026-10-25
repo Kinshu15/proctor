@@ -201,7 +201,7 @@ app.get("/", (req, res) => {
 // 1. Generate Quiz Draft using AI (Grok/Groq)
 app.post("/api/quizzes/generate", async (req, res) => {
   try {
-    const { title, topic, numQuestions, difficulty, questionType, timeLimit } = req.body;
+    const { title, topic, instructions, numQuestions, difficulty, questionType, timeLimit } = req.body;
 
     if (!topic && !title) {
       return res.status(400).json({ message: "Topic or title is required for AI generation." });
@@ -210,6 +210,7 @@ app.post("/api/quizzes/generate", async (req, res) => {
     const generated = await aiQuizService.generateQuiz({
       title: title || `${topic} Assessment`,
       topic: topic || title,
+      instructions: instructions || "",
       numQuestions: Math.max(1, Math.min(20, Number(numQuestions) || 5)),
       difficulty: difficulty || "Medium",
       questionType: questionType || "MCQ",
@@ -284,6 +285,7 @@ app.post("/api/quizzes/save", (req, res) => {
       id: quizId,
       title: quizData.title.trim(),
       description: (quizData.description || "").trim(),
+      instructions: (quizData.instructions || quizData.description || "").trim(),
       category: (quizData.category || "Custom").trim(),
       difficulty: quizData.difficulty || "Medium",
       questionType: quizData.questionType || "MCQ",

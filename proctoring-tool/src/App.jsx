@@ -1702,8 +1702,14 @@ function App() {
                 🚩 Flags: <strong>{flagCount} / 5</strong>
               </div>
 
-              <button className="btn btn-quit" style={{ padding: '8px 14px' }} onClick={handleQuitQuiz}>
-                Quit
+              {/* Submit Final Exam Button */}
+              <button
+                className="btn btn-submit-exam"
+                disabled={loading}
+                onClick={handleSubmitExam}
+                style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 700 }}
+              >
+                {loading ? 'Submitting...' : '✓ Submit Exam'}
               </button>
             </div>
           </div>

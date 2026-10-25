@@ -164,11 +164,18 @@ function sanitizeQuizData(data, defaults = {}) {
 async function generateQuiz({
   title,
   topic,
+  instructions = "",
   numQuestions = 5,
   difficulty = "Medium",
   questionType = "MCQ", // 'MCQ' | 'True/False' | 'Mixed'
   timeLimit = 10,
 }) {
+  const customInstructionsClause = instructions && instructions.trim()
+    ? `\n- INSTRUCTOR'S SPECIAL GENERATION INSTRUCTIONS:
+"${instructions.trim()}"
+Follow these instructions precisely regarding what specific topics, subtopics, scenario types, code vs concept, and style of questions to generate.`
+    : "";
+
   const prompt = `You are an expert educational assessment creator.
 Create a structured examination quiz in JSON based on the following specifications:
 - Topic / Subject: "${topic || title}"
@@ -176,7 +183,7 @@ Create a structured examination quiz in JSON based on the following specificatio
 - Number of Questions: ${numQuestions}
 - Difficulty Level: ${difficulty} (Easy, Medium, or Hard)
 - Question Format: ${questionType} (Options: MCQ with 4 choices, True/False with 2 choices ["True", "False"], or Mixed)
-- Time Limit: ${timeLimit} minutes
+- Time Limit: ${timeLimit} minutes${customInstructionsClause}
 
 STRICT REQUIREMENTS:
 1. Return valid JSON only with keys: "title", "description", "category", "difficulty", "durationMinutes", "questions".

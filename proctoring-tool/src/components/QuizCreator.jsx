@@ -6,7 +6,7 @@ export default function QuizCreator({ initialQuiz = null, onSaved, onCancel }) {
   // Form Configuration State
   const [title, setTitle] = useState(initialQuiz?.title || '');
   const [topic, setTopic] = useState(initialQuiz?.category || '');
-  const [description, setDescription] = useState(initialQuiz?.description || '');
+  const [instructions, setInstructions] = useState(initialQuiz?.instructions || initialQuiz?.description || '');
   const [numQuestions, setNumQuestions] = useState(initialQuiz?.questions?.length || 5);
   const [difficulty, setDifficulty] = useState(initialQuiz?.difficulty || 'Medium');
   const [questionType, setQuestionType] = useState(initialQuiz?.questionType || 'MCQ');
@@ -95,6 +95,7 @@ export default function QuizCreator({ initialQuiz = null, onSaved, onCancel }) {
       const res = await generateAiQuiz({
         title: title.trim() || `${topic.trim()} Assessment`,
         topic: topic.trim() || title.trim(),
+        instructions: instructions.trim(),
         numQuestions: Number(numQuestions) || 5,
         difficulty,
         questionType,
@@ -104,10 +105,7 @@ export default function QuizCreator({ initialQuiz = null, onSaved, onCancel }) {
       if (res.quiz) {
         setQuizData(res.quiz);
         if (!title.trim()) setTitle(res.quiz.title);
-        if (!description.trim() && res.quiz.description) {
-          setDescription(res.quiz.description);
-        }
-        setSuccessMsg(`Generated ${res.quiz.questions.length} questions successfully! You can now review, edit, or publish.`);
+        setSuccessMsg(`Generated ${res.quiz.questions.length} questions successfully using your instructions! You can now review, edit, or publish.`);
       }
     } catch (err) {
       console.error('Generation failed:', err);
@@ -225,7 +223,8 @@ export default function QuizCreator({ initialQuiz = null, onSaved, onCancel }) {
       const payload = {
         id: initialQuiz?.id || quizData?.id || quizTrackingId,
         title: title.trim() || quizData?.title,
-        description: description.trim() || quizData?.description || `Assessment on ${topic || title}`,
+        description: instructions.trim() || quizData?.description || `Assessment on ${topic || title}`,
+        instructions: instructions.trim(),
         category: topic.trim() || quizData?.category || 'Custom',
         difficulty: difficulty || quizData?.difficulty || 'Medium',
         questionType: questionType || quizData?.questionType || 'MCQ',
@@ -384,16 +383,18 @@ export default function QuizCreator({ initialQuiz = null, onSaved, onCancel }) {
 
           <div className="input-group" style={{ gridColumn: '1 / -1' }}>
             <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>📝 Quiz Description & Further Instructions</span>
-              <span style={{ fontSize: '11px', color: '#64748b' }}>Shown to students on the Step 4 Instructions page</span>
+              <span style={{ fontWeight: 600, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                🤖 AI Question Generation Instructions & Guidelines
+              </span>
+              <span style={{ fontSize: '11px', color: '#64748b' }}>Custom instructions for AI on question style & topics</span>
             </label>
             <textarea
               className="input-field"
               rows={3}
-              placeholder="Add specific instructions, allowed tools (e.g. calculator), or rules for candidates here..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              style={{ resize: 'vertical', minHeight: '80px', lineHeight: '1.5' }}
+              placeholder="e.g. Focus on practical real-world scenarios, coding questions, and debugging. Emphasize async/await and promise chaining. Make options tricky with plausible edge-case distractors. Avoid simple definition questions."
+              value={instructions}
+              onChange={(e) => setInstructions(e.target.value)}
+              style={{ resize: 'vertical', minHeight: '85px', lineHeight: '1.5' }}
             />
           </div>
         </div>
