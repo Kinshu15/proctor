@@ -1836,7 +1836,7 @@ function App() {
                     {resultData.quizTitle || activeQuizMeta?.title}
                   </span>
                 ) : null}
-                Student: <strong>{studentName}</strong> | Session: <code>{sessionId}</code>
+                Student: <strong>{studentName}</strong>
               </p>
 
               {/* Circular Percentage */}
