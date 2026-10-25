@@ -20,8 +20,9 @@ Thumbs.db
 .env*
 *.env
 **/.env
-**/.env*
 !**/.env.example
+!proctoring-tool/.env.production
+
 
 # Proctoring capture dumps
 user-camera-snap/
