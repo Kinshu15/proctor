@@ -371,6 +371,19 @@ function App() {
     };
   }, []);
 
+  // Auto-submit exam when allotted time expires
+  useEffect(() => {
+    if (view === 'quiz' && timer !== '' && !isQuizSubmittedRef.current && !isAutoSubmittingRef.current) {
+      const elapsedSeconds = Number(timer) || 0;
+      const totalSeconds = ((Number(activeQuizMeta?.durationMinutes) || 10) * 60);
+      if (elapsedSeconds >= totalSeconds) {
+        isAutoSubmittingRef.current = true;
+        isQuizSubmittedRef.current = true;
+        performSubmitExam(true, 'Allotted examination duration expired.');
+      }
+    }
+  }, [timer, view, activeQuizMeta]);
+
   // Proctoring Flag Recording Handler (Max 5 flags -> auto submit)
   const handleRecordFlag = useCallback((reason) => {
     // Strictly disallow flagging once quiz submission starts or once submitted
@@ -702,6 +715,10 @@ function App() {
       // 1. Initialize backend session with quizId
       const sessionData = await startExam(studentId.trim(), studentName.trim(), selectedQuizId);
       setSessionId(sessionData.sessionId);
+      setActiveQuizMeta({
+        ...chosenQuiz,
+        durationMinutes: Number(sessionData.durationMinutes) || Number(chosenQuiz?.durationMinutes) || 10
+      });
 
       // 2. Fetch MCQ questions for selected quiz
       const qList = await getAllQuestions(selectedQuizId);
@@ -1676,12 +1693,22 @@ function App() {
                 <span>Proctoring (Camera + Screen)</span>
               </div>
 
-              {timer !== '' && (
-                <div className="timer-badge">
-                  <span className="timer-indicator"></span>
-                  <span>{timer}s elapsed</span>
-                </div>
-              )}
+              {timer !== '' && (() => {
+                const elapsedSeconds = Number(timer) || 0;
+                const totalSeconds = ((Number(activeQuizMeta?.durationMinutes) || 10) * 60);
+                const remainingSeconds = Math.max(0, totalSeconds - elapsedSeconds);
+                const mins = Math.floor(remainingSeconds / 60);
+                const secs = remainingSeconds % 60;
+                const formattedTime = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+                return (
+                  <span
+                    className="timer-plain-text"
+                    style={{ color: remainingSeconds <= 60 ? '#dc2626' : '#1e293b' }}
+                  >
+                    ⏱️ Time Left: {formattedTime}
+                  </span>
+                );
+              })()}
 
               {/* Flag Counter Pill */}
               <div
