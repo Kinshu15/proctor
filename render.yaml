@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: athena-proctor-backend
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROK_API_KEY
+        sync: false

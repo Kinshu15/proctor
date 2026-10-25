@@ -1,1 +1,268 @@
-[]
+[
+  {
+    "sessionId": "session-1792918584410",
+    "userId": "001",
+    "name": "Kushagra Bhardwaj",
+    "quizId": "logic-gates-505571",
+    "quizTitle": "Logic Gates",
+    "durationMinutes": 5,
+    "startedAt": "2026-10-25T08:56:24.373Z",
+    "submittedAt": "2026-10-25T08:58:06.146Z",
+    "status": "submitted",
+    "totalQuestions": 5,
+    "attempted": 5,
+    "correct": 5,
+    "wrong": 0,
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 2,
+        "isCorrect": true,
+        "answeredAt": "2026-10-25T08:56:44.339Z"
+      },
+      {
+        "questionId": 2,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-25T08:57:05.273Z"
+      },
+      {
+        "questionId": 3,
+        "selectedAnswer": 0,
+        "isCorrect": true,
+        "answeredAt": "2026-10-25T08:57:21.831Z"
+      },
+      {
+        "questionId": 4,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-25T08:57:45.717Z"
+      },
+      {
+        "questionId": 5,
+        "selectedAnswer": 0,
+        "isCorrect": true,
+        "answeredAt": "2026-10-25T08:58:06.141Z"
+      }
+    ],
+    "withinTimeSlot": false,
+    "scoreConsidered": false,
+    "outOfSlotReason": "Attempt started before scheduled window (10/25/2026, 2:30:00 PM)",
+    "schedule": {
+      "hasSchedule": true,
+      "startTime": "2026-10-25T09:00:00.000Z",
+      "endTime": "2026-10-25T09:05:00.000Z"
+    },
+    "timeTakenSeconds": 102,
+    "flagCount": 0,
+    "autoSubmitted": false
+  },
+  {
+    "sessionId": "session-1792923244970",
+    "userId": "1001",
+    "name": "Kushagra",
+    "quizId": "quiz-984002-njdn",
+    "quizTitle": "Logic Gates",
+    "durationMinutes": 5,
+    "startedAt": "2026-10-25T10:14:04.970Z",
+    "submittedAt": "2026-10-25T10:15:03.586Z",
+    "status": "submitted",
+    "totalQuestions": 5,
+    "attempted": 5,
+    "correct": 4,
+    "wrong": 1,
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-25T10:14:25.664Z"
+      },
+      {
+        "questionId": 2,
+        "selectedAnswer": 2,
+        "isCorrect": true,
+        "answeredAt": "2026-10-25T10:14:33.647Z"
+      },
+      {
+        "questionId": 3,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-25T10:14:52.012Z"
+      },
+      {
+        "questionId": 4,
+        "selectedAnswer": 0,
+        "isCorrect": false,
+        "answeredAt": "2026-10-25T10:14:53.690Z"
+      },
+      {
+        "questionId": 5,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-25T10:15:03.571Z"
+      }
+    ],
+    "withinTimeSlot": true,
+    "scoreConsidered": true,
+    "outOfSlotReason": null,
+    "schedule": {
+      "hasSchedule": true,
+      "startTime": "2026-10-25T10:14:00.000Z",
+      "endTime": "2026-10-25T10:19:00.000Z"
+    },
+    "timeTakenSeconds": 59,
+    "flagCount": 0,
+    "autoSubmitted": false
+  },
+  {
+    "sessionId": "session-1792923351492",
+    "userId": "100gf",
+    "name": "Kushagrahhj",
+    "quizId": "quiz-984002-njdn",
+    "quizTitle": "Logic Gates",
+    "durationMinutes": 5,
+    "startedAt": "2026-10-25T10:15:51.492Z",
+    "submittedAt": "2026-10-25T10:16:04.120Z",
+    "status": "submitted",
+    "totalQuestions": 5,
+    "attempted": 1,
+    "correct": 0,
+    "wrong": 1,
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 3,
+        "isCorrect": false,
+        "answeredAt": "2026-10-25T10:16:04.113Z"
+      }
+    ],
+    "withinTimeSlot": true,
+    "scoreConsidered": true,
+    "outOfSlotReason": null,
+    "schedule": {
+      "hasSchedule": true,
+      "startTime": "2026-10-25T10:14:00.000Z",
+      "endTime": "2026-10-25T10:19:00.000Z"
+    },
+    "timeTakenSeconds": 13,
+    "flagCount": 0,
+    "autoSubmitted": false
+  },
+  {
+    "sessionId": "session-1792924688385",
+    "userId": "student-101",
+    "name": "adam",
+    "quizId": "quiz-595597-wzle",
+    "quizTitle": "Percentage",
+    "durationMinutes": 10,
+    "startedAt": "2026-10-25T10:38:08.385Z",
+    "submittedAt": "2026-10-25T10:39:00.378Z",
+    "status": "submitted",
+    "totalQuestions": 5,
+    "attempted": 5,
+    "correct": 4,
+    "wrong": 1,
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 0,
+        "isCorrect": true,
+        "answeredAt": "2026-10-25T10:38:12.818Z"
+      },
+      {
+        "questionId": 2,
+        "selectedAnswer": 0,
+        "isCorrect": true,
+        "answeredAt": "2026-10-25T10:38:16.347Z"
+      },
+      {
+        "questionId": 3,
+        "selectedAnswer": 1,
+        "isCorrect": false,
+        "answeredAt": "2026-10-25T10:38:30.309Z"
+      },
+      {
+        "questionId": 4,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-25T10:38:49.167Z"
+      },
+      {
+        "questionId": 5,
+        "selectedAnswer": 0,
+        "isCorrect": true,
+        "answeredAt": "2026-10-25T10:39:00.370Z"
+      }
+    ],
+    "withinTimeSlot": true,
+    "scoreConsidered": true,
+    "outOfSlotReason": null,
+    "schedule": {
+      "hasSchedule": true,
+      "startTime": "2026-10-25T10:36:00.000Z",
+      "endTime": "2026-10-25T10:46:00.000Z"
+    },
+    "timeTakenSeconds": 52,
+    "flagCount": 0,
+    "autoSubmitted": false
+  },
+  {
+    "sessionId": "session-1792925473329",
+    "userId": "student-101",
+    "name": "Aditya Sharma",
+    "quizId": "quiz-595597-wzle",
+    "quizTitle": "Percentage",
+    "durationMinutes": 10,
+    "startedAt": "2026-10-25T10:51:13.287Z",
+    "submittedAt": "2026-10-25T10:51:23.999Z",
+    "status": "submitted",
+    "totalQuestions": 5,
+    "attempted": 5,
+    "correct": 1,
+    "wrong": 4,
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 1,
+        "isCorrect": false,
+        "answeredAt": "2026-10-25T10:51:15.442Z"
+      },
+      {
+        "questionId": 2,
+        "selectedAnswer": 3,
+        "isCorrect": false,
+        "answeredAt": "2026-10-25T10:51:16.599Z"
+      },
+      {
+        "questionId": 3,
+        "selectedAnswer": 1,
+        "isCorrect": false,
+        "answeredAt": "2026-10-25T10:51:18.865Z"
+      },
+      {
+        "questionId": 4,
+        "selectedAnswer": 0,
+        "isCorrect": false,
+        "answeredAt": "2026-10-25T10:51:20.206Z"
+      },
+      {
+        "questionId": 5,
+        "selectedAnswer": 0,
+        "isCorrect": true,
+        "answeredAt": "2026-10-25T10:51:23.993Z"
+      }
+    ],
+    "withinTimeSlot": false,
+    "scoreConsidered": false,
+    "outOfSlotReason": "Attempt started after scheduled window (10/25/2026, 4:16:00 PM)",
+    "schedule": {
+      "hasSchedule": true,
+      "startTime": "2026-10-25T10:36:00.000Z",
+      "endTime": "2026-10-25T10:46:00.000Z"
+    },
+    "timeTakenSeconds": 11,
+    "flagCount": 0,
+    "autoSubmitted": false
+  }
+]

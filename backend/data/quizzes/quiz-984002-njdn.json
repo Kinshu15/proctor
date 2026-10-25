@@ -1,0 +1,79 @@
+{
+  "id": "quiz-984002-njdn",
+  "title": "Logic Gates",
+  "description": "simpifiying the expression questions",
+  "category": "Logic gates,",
+  "difficulty": "Easy",
+  "questionType": "MCQ",
+  "durationMinutes": 5,
+  "schedule": {
+    "hasSchedule": true,
+    "startTime": "2026-10-25T10:14:00.000Z",
+    "endTime": "2026-10-25T10:19:00.000Z"
+  },
+  "status": "published",
+  "createdAt": "2026-10-25T10:11:11.625Z",
+  "updatedAt": "2026-10-25T10:11:11.625Z",
+  "questions": [
+    {
+      "id": 1,
+      "question": "What is the output of an AND gate when both inputs are 1?",
+      "options": [
+        "0",
+        "1",
+        "Undefined",
+        "Depends on voltage"
+      ],
+      "correctAnswer": 1,
+      "explanation": "An AND gate outputs 1 only when all its inputs are 1, so the result is 1."
+    },
+    {
+      "id": 2,
+      "question": "Which gate outputs the opposite of its single input?",
+      "options": [
+        "AND",
+        "OR",
+        "NOT",
+        "XOR"
+      ],
+      "correctAnswer": 2,
+      "explanation": "The NOT gate inverts its input, producing the opposite logical value."
+    },
+    {
+      "id": 3,
+      "question": "What is the output of an OR gate with inputs 0 and 1?",
+      "options": [
+        "0",
+        "1",
+        "Both 0 and 1",
+        "Error"
+      ],
+      "correctAnswer": 1,
+      "explanation": "An OR gate outputs 1 if any input is 1, so the result is 1."
+    },
+    {
+      "id": 4,
+      "question": "Which gate produces a high output only when exactly one of its two inputs is high?",
+      "options": [
+        "AND",
+        "NAND",
+        "XOR",
+        "NOR"
+      ],
+      "correctAnswer": 2,
+      "explanation": "The XOR (exclusive OR) gate is true only when exactly one input is true."
+    },
+    {
+      "id": 5,
+      "question": "In a NAND gate, what is the output when both inputs are 0?",
+      "options": [
+        "0",
+        "1",
+        "Undefined",
+        "Depends on gate type"
+      ],
+      "correctAnswer": 1,
+      "explanation": "A NAND gate outputs the negation of AND; since 0 AND 0 = 0, the NAND output is 1."
+    }
+  ]
+}

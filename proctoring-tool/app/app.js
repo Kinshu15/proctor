@@ -84,6 +84,11 @@ function stopAllProctoring() {
 }
 
 function createWindow() {
+    const isDev = !app.isPackaged && process.env.NODE_ENV !== 'production';
+    const preloadPath = fs.existsSync(path.join(app.getAppPath(), 'app', 'preload.js'))
+        ? path.join(app.getAppPath(), 'app', 'preload.js')
+        : path.join(import.meta.dirname, 'preload.js');
+
     electronWindow = new BrowserWindow({
         height: 850,
         width: 1250,
@@ -92,8 +97,8 @@ function createWindow() {
         frame: true,
         kiosk: false,
         webPreferences: {
-            devTools: true,
-            preload: path.join(import.meta.dirname, 'preload.js')
+            devTools: isDev,
+            preload: preloadPath
         }
     });
 
@@ -151,17 +156,32 @@ function createWindow() {
     });
 
     const devUrl = 'http://localhost:5173';
-    const distPath = path.join(import.meta.dirname, '..', 'dist', 'index.html');
+    const distPath = path.join(app.getAppPath(), 'dist', 'index.html');
+    const fallbackDist = path.join(import.meta.dirname, '..', 'dist', 'index.html');
 
-    electronWindow.loadURL(devUrl).catch(() => {
+    if (isDev) {
+        electronWindow.loadURL(devUrl).catch(() => {
+            if (fs.existsSync(distPath)) {
+                electronWindow.loadFile(distPath);
+            } else if (fs.existsSync(fallbackDist)) {
+                electronWindow.loadFile(fallbackDist);
+            }
+        });
+    } else {
         if (fs.existsSync(distPath)) {
             electronWindow.loadFile(distPath);
+        } else if (fs.existsSync(fallbackDist)) {
+            electronWindow.loadFile(fallbackDist);
+        } else {
+            electronWindow.loadURL(devUrl);
         }
-    });
+    }
 
     electronWindow.webContents.on('did-fail-load', () => {
         if (fs.existsSync(distPath)) {
             electronWindow.loadFile(distPath);
+        } else if (fs.existsSync(fallbackDist)) {
+            electronWindow.loadFile(fallbackDist);
         }
     });
 }
@@ -237,7 +257,10 @@ let currentExamInfo = {
 };
 
 function getStudentDirs() {
-    const baseDir = cameraShotPath || path.join(import.meta.dirname, "user-camera-snap");
+    const defaultSnapDir = app.isPackaged
+        ? path.join(app.getPath('userData'), "user-camera-snap")
+        : path.join(import.meta.dirname, "user-camera-snap");
+    const baseDir = cameraShotPath || defaultSnapDir;
     
     // 1. Quiz folder: clean quiz title + quiz ID to track quizzes with same name
     const rawQuizTitle = currentExamInfo?.quizTitle || "Quiz";
@@ -283,8 +306,10 @@ ipcMain.handle('set-student-info', (_event, studentInfo) => {
 
 ipcMain.handle('delete-quiz-captures', (_event, quizId) => {
     try {
-        if (!quizId) return { success: false, message: "Quiz ID is required" };
-        const baseDir = cameraShotPath || path.join(import.meta.dirname, "user-camera-snap");
+        const defaultSnapDir = app.isPackaged
+            ? path.join(app.getPath('userData'), "user-camera-snap")
+            : path.join(import.meta.dirname, "user-camera-snap");
+        const baseDir = cameraShotPath || defaultSnapDir;
         if (!fs.existsSync(baseDir)) {
             return { success: true, deletedCount: 0 };
         }
