@@ -281,19 +281,24 @@ app.post("/api/quizzes/save", (req, res) => {
       ? JSON.parse(fs.readFileSync(filePath, "utf-8"))
       : {};
 
+    const durationMin = Number(quizData.durationMinutes) || 10;
+    const nowMs = Date.now();
+    const defaultStartIso = new Date(nowMs + 5 * 60 * 1000).toISOString();
+    const defaultEndIso = new Date(nowMs + (5 + durationMin) * 60 * 1000).toISOString();
+
     const fullQuiz = {
       id: quizId,
       title: quizData.title.trim(),
       description: (quizData.description || "").trim(),
-      instructions: (quizData.instructions || quizData.description || "").trim(),
+      instructions: (quizData.instructions || "").trim(),
       category: (quizData.category || "Custom").trim(),
       difficulty: quizData.difficulty || "Medium",
       questionType: quizData.questionType || "MCQ",
-      durationMinutes: Number(quizData.durationMinutes) || 10,
+      durationMinutes: durationMin,
       schedule: {
-        hasSchedule: Boolean(quizData.schedule?.hasSchedule),
-        startTime: quizData.schedule?.startTime || null,
-        endTime: quizData.schedule?.endTime || null,
+        hasSchedule: quizData.schedule ? Boolean(quizData.schedule.hasSchedule) : true,
+        startTime: quizData.schedule?.startTime || defaultStartIso,
+        endTime: quizData.schedule?.endTime || defaultEndIso,
       },
       status,
       createdAt: existingData.createdAt || new Date().toISOString(),

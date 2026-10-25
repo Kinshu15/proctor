@@ -6,7 +6,7 @@ export default function QuizCreator({ initialQuiz = null, onSaved, onCancel }) {
   // Form Configuration State
   const [title, setTitle] = useState(initialQuiz?.title || '');
   const [topic, setTopic] = useState(initialQuiz?.category || '');
-  const [instructions, setInstructions] = useState(initialQuiz?.instructions || initialQuiz?.description || '');
+  const [instructions, setInstructions] = useState(initialQuiz?.instructions || '');
   const [numQuestions, setNumQuestions] = useState(initialQuiz?.questions?.length || 5);
   const [difficulty, setDifficulty] = useState(initialQuiz?.difficulty || 'Medium');
   const [questionType, setQuestionType] = useState(initialQuiz?.questionType || 'MCQ');
@@ -20,7 +20,7 @@ export default function QuizCreator({ initialQuiz = null, onSaved, onCancel }) {
     return `${cleanTopic}-${Date.now().toString().slice(-6)}-${rand}`;
   });
 
-  // Time Slot Scheduling State
+  // Time Slot Scheduling State: default quiz starts 5 minutes after creation
   const formatDatetimeLocal = (d) => {
     const pad = (n) => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
@@ -38,7 +38,8 @@ export default function QuizCreator({ initialQuiz = null, onSaved, onCancel }) {
     }
   };
 
-  const defaultStart = new Date();
+  // Default start is 5 minutes from current time
+  const defaultStart = new Date(Date.now() + 5 * 60 * 1000);
   const defaultInitialMinutes = initialQuiz?.durationMinutes || 10;
 
   const [hasSchedule, setHasSchedule] = useState(
@@ -223,7 +224,7 @@ export default function QuizCreator({ initialQuiz = null, onSaved, onCancel }) {
       const payload = {
         id: initialQuiz?.id || quizData?.id || quizTrackingId,
         title: title.trim() || quizData?.title,
-        description: instructions.trim() || quizData?.description || `Assessment on ${topic || title}`,
+        description: quizData?.description?.trim() || `Assessment on ${topic || title}`,
         instructions: instructions.trim(),
         category: topic.trim() || quizData?.category || 'Custom',
         difficulty: difficulty || quizData?.difficulty || 'Medium',
