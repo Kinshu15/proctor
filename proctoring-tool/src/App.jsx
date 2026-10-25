@@ -5,6 +5,7 @@ import {
   getAllQuestions,
   getManagedQuiz,
   getQuizzes,
+  getSession,
   startExam,
   submitAnswer,
   submitExam,
@@ -208,6 +209,7 @@ function App() {
   const [timer, setTimer] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [timeAddedAlert, setTimeAddedAlert] = useState(null);
 
   // Exam result state
   const [examResult, setExamResult] = useState(null);
@@ -383,6 +385,43 @@ function App() {
       }
     }
   }, [timer, view, activeQuizMeta]);
+
+  // Poll session every 5s while taking quiz to pick up extra time granted by instructor
+  useEffect(() => {
+    if (view !== 'quiz' || !sessionId || isQuizSubmittedRef.current) return;
+
+    let isMounted = true;
+    const interval = setInterval(async () => {
+      try {
+        const data = await getSession(sessionId);
+        if (!isMounted || !data) return;
+
+        const serverMins = Number(data.durationMinutes);
+        if (serverMins) {
+          setActiveQuizMeta((prev) => {
+            if (!prev) return prev;
+            const currentMins = Number(prev.durationMinutes) || 10;
+            if (serverMins > currentMins) {
+              const addedMins = serverMins - currentMins;
+              setTimeAddedAlert(`🎉 +${addedMins} extra minutes granted by instructor!`);
+              setTimeout(() => {
+                setTimeAddedAlert(null);
+              }, 5000);
+              return { ...prev, durationMinutes: serverMins };
+            }
+            return prev;
+          });
+        }
+      } catch (err) {
+        // silent polling check
+      }
+    }, 5000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [view, sessionId]);
 
   // Proctoring Flag Recording Handler (Max 5 flags -> auto submit)
   const handleRecordFlag = useCallback((reason) => {
@@ -1709,6 +1748,25 @@ function App() {
                   </span>
                 );
               })()}
+
+              {timeAddedAlert && (
+                <span
+                  style={{
+                    color: '#15803d',
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    background: '#dcfce7',
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid #bbf7d0',
+                  }}
+                >
+                  {timeAddedAlert}
+                </span>
+              )}
 
               {/* Flag Counter Pill */}
               <div

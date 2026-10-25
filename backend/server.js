@@ -460,6 +460,19 @@ app.post("/api/quizzes/:quizId/add-time", (req, res) => {
   const targetFile = path.join(quizzesDir, `${quiz.id}.json`);
   fs.writeFileSync(targetFile, JSON.stringify(quiz, null, 2));
 
+  // Also apply extra time to all ongoing student sessions for this quiz
+  const sessions = readSessions();
+  let updatedAny = false;
+  sessions.forEach((s) => {
+    if (s.quizId === quiz.id && (s.status === "in-progress" || s.status === "paused")) {
+      s.durationMinutes = (Number(s.durationMinutes) || 10) + addMins;
+      updatedAny = true;
+    }
+  });
+  if (updatedAny) {
+    saveSessions(sessions);
+  }
+
   res.json({
     message: `Added +${addMins} minutes to "${quiz.title}". New allotted duration: ${quiz.durationMinutes} mins.`,
     durationMinutes: quiz.durationMinutes,
@@ -897,7 +910,15 @@ app.get("/exam/session/:sessionId", (req, res) => {
     return res.status(404).json({ message: "Session not found" });
   }
 
-  res.json(session);
+  const quiz = getQuizById(session.quizId, true);
+  const quizDuration = quiz ? Number(quiz.durationMinutes) || 0 : 0;
+  const sessionDuration = Number(session.durationMinutes) || 0;
+  const effectiveDuration = Math.max(sessionDuration, quizDuration) || 10;
+
+  res.json({
+    ...session,
+    durationMinutes: effectiveDuration,
+  });
 });
 
 // 10. Submit the whole exam
