@@ -713,10 +713,12 @@ function App() {
       setSelectedAnswers({});
       setAnsweredSubmitted(new Set());
 
-      // 3. Start main process proctoring timer & camera captures with student info
+      // 3. Start main process proctoring timer & camera captures with student info and quiz details
       await window.athena?.startTimerOnMain?.({
         studentName: studentName.trim(),
-        studentId: studentId.trim()
+        studentId: studentId.trim(),
+        quizId: chosenQuiz?.id || selectedQuizId,
+        quizTitle: chosenQuiz?.title || activeQuizMeta?.title || "Quiz"
       });
 
       // Reset flag counters for new test attempt

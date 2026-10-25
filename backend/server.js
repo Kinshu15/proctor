@@ -269,7 +269,8 @@ app.post("/api/quizzes/save", (req, res) => {
     let quizId = quizData.id;
     if (!quizId) {
       const slug = sanitizeSlug(quizData.title) || "custom-quiz";
-      quizId = `${slug}-${Date.now().toString().slice(-6)}`;
+      const randomSuffix = Math.random().toString(36).substring(2, 6);
+      quizId = `${slug}-${Date.now().toString().slice(-6)}-${randomSuffix}`;
     }
 
     const status = quizData.status === "draft" ? "draft" : "published";
@@ -332,27 +333,66 @@ app.get("/api/quizzes/manage/:quizId", (req, res) => {
   res.json(quiz);
 });
 
-// 6. Delete a quiz
+// 6. Delete a quiz and all associated student captures
 app.delete("/api/quizzes/:quizId", (req, res) => {
   const quizId = req.params.quizId;
   const targetFile = path.join(quizzesDir, `${quizId}.json`);
+  let found = false;
 
   if (fs.existsSync(targetFile)) {
     fs.unlinkSync(targetFile);
-    return res.json({ message: `Quiz '${quizId}' deleted successfully.` });
+    found = true;
+  } else {
+    // Also check if any file has matching id inside
+    const files = fs.readdirSync(quizzesDir).filter((file) => file.endsWith(".json"));
+    for (const file of files) {
+      const fPath = path.join(quizzesDir, file);
+      try {
+        const data = JSON.parse(fs.readFileSync(fPath, "utf-8"));
+        if (data.id === quizId) {
+          fs.unlinkSync(fPath);
+          found = true;
+          break;
+        }
+      } catch (e) {}
+    }
   }
 
-  // Also check if any file has matching id inside
-  const files = fs.readdirSync(quizzesDir).filter((file) => file.endsWith(".json"));
-  for (const file of files) {
-    const fPath = path.join(quizzesDir, file);
-    try {
-      const data = JSON.parse(fs.readFileSync(fPath, "utf-8"));
-      if (data.id === quizId) {
-        fs.unlinkSync(fPath);
-        return res.json({ message: `Quiz '${quizId}' deleted successfully.` });
+  // Delete all student captures for this quiz from user-camera-snap directories
+  try {
+    const possibleCaptureDirs = [
+      path.join(__dirname, "..", "proctoring-tool", "app", "user-camera-snap"),
+      path.join(__dirname, "user-camera-snap")
+    ];
+
+    const cleanId = String(quizId).trim().replace(/[^a-zA-Z0-9_\-]/g, "_");
+
+    for (const capDir of possibleCaptureDirs) {
+      if (fs.existsSync(capDir)) {
+        const entries = fs.readdirSync(capDir, { withFileTypes: true });
+        for (const entry of entries) {
+          if (entry.isDirectory()) {
+            const folderName = entry.name;
+            if (
+              folderName === cleanId ||
+              folderName.endsWith(`_${cleanId}`) ||
+              folderName.endsWith(`-${cleanId}`) ||
+              folderName.toLowerCase().includes(cleanId.toLowerCase())
+            ) {
+              const targetFolder = path.join(capDir, folderName);
+              fs.rmSync(targetFolder, { recursive: true, force: true });
+              console.log(`[Backend] Deleted all student captures for quiz '${quizId}' at: ${targetFolder}`);
+            }
+          }
+        }
       }
-    } catch (e) {}
+    }
+  } catch (capErr) {
+    console.error("Error deleting quiz captures on disk:", capErr);
+  }
+
+  if (found) {
+    return res.json({ message: `Quiz '${quizId}' and all student captures deleted successfully.` });
   }
 
   res.status(404).json({ message: "Quiz not found." });

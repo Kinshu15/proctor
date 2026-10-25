@@ -229,13 +229,33 @@ ipcMain.handle('is-fullscreen', () => {
     return false;
 });
 
-let currentStudentInfo = { studentName: "Student", studentId: "101" };
+let currentExamInfo = {
+    studentName: "Student",
+    studentId: "101",
+    quizId: "general",
+    quizTitle: "Quiz"
+};
 
 function getStudentDirs() {
     const baseDir = cameraShotPath || path.join(import.meta.dirname, "user-camera-snap");
-    const rawName = currentStudentInfo?.studentName || "Student";
-    const cleanName = rawName.trim().replace(/[^a-zA-Z0-9_\-\s]/g, "").replace(/\s+/g, "_") || "Student";
-    const studentDir = path.join(baseDir, cleanName);
+    
+    // 1. Quiz folder: clean quiz title + quiz ID to track quizzes with same name
+    const rawQuizTitle = currentExamInfo?.quizTitle || "Quiz";
+    const cleanQuizTitle = rawQuizTitle.trim().replace(/[^a-zA-Z0-9_\-\s]/g, "").replace(/\s+/g, "_") || "Quiz";
+    const rawQuizId = currentExamInfo?.quizId || "general";
+    const cleanQuizId = String(rawQuizId).trim().replace(/[^a-zA-Z0-9_\-]/g, "_") || "general";
+
+    const quizFolderName = cleanQuizTitle.toLowerCase().endsWith(cleanQuizId.toLowerCase())
+        ? cleanQuizTitle
+        : `${cleanQuizTitle}_${cleanQuizId}`;
+    const quizDir = path.join(baseDir, quizFolderName);
+
+    // 2. Student folder: clean student name
+    const rawStudentName = currentExamInfo?.studentName || "Student";
+    const cleanStudentName = rawStudentName.trim().replace(/[^a-zA-Z0-9_\-\s]/g, "").replace(/\s+/g, "_") || "Student";
+    const studentDir = path.join(quizDir, cleanStudentName);
+
+    // 3. Captures folders
     const screenCapturesDir = path.join(studentDir, "screen-captures");
     const cameraCapturesDir = path.join(studentDir, "camera-captures");
 
@@ -246,17 +266,55 @@ function getStudentDirs() {
         fs.mkdirSync(cameraCapturesDir, { recursive: true });
     }
 
-    return { studentDir, screenCapturesDir, cameraCapturesDir };
+    return { studentDir, screenCapturesDir, cameraCapturesDir, quizDir, baseDir, quizFolderName };
 }
 
 ipcMain.handle('set-student-info', (_event, studentInfo) => {
     if (studentInfo) {
-        currentStudentInfo = {
-            studentName: studentInfo.studentName || studentInfo.name || "Student",
-            studentId: studentInfo.studentId || studentInfo.id || "101"
+        currentExamInfo = {
+            studentName: studentInfo.studentName || studentInfo.name || currentExamInfo.studentName,
+            studentId: studentInfo.studentId || studentInfo.id || currentExamInfo.studentId,
+            quizId: studentInfo.quizId || currentExamInfo.quizId,
+            quizTitle: studentInfo.quizTitle || currentExamInfo.quizTitle
         };
     }
-    return { success: true, studentInfo: currentStudentInfo };
+    return { success: true, studentInfo: currentExamInfo };
+});
+
+ipcMain.handle('delete-quiz-captures', (_event, quizId) => {
+    try {
+        if (!quizId) return { success: false, message: "Quiz ID is required" };
+        const baseDir = cameraShotPath || path.join(import.meta.dirname, "user-camera-snap");
+        if (!fs.existsSync(baseDir)) {
+            return { success: true, deletedCount: 0 };
+        }
+
+        const cleanId = String(quizId).trim().replace(/[^a-zA-Z0-9_\-]/g, "_");
+        const entries = fs.readdirSync(baseDir, { withFileTypes: true });
+        let deletedCount = 0;
+
+        for (const entry of entries) {
+            if (entry.isDirectory()) {
+                const folderName = entry.name;
+                if (
+                    folderName === cleanId ||
+                    folderName.endsWith(`_${cleanId}`) ||
+                    folderName.endsWith(`-${cleanId}`) ||
+                    folderName.toLowerCase().includes(cleanId.toLowerCase())
+                ) {
+                    const targetQuizDir = path.join(baseDir, folderName);
+                    fs.rmSync(targetQuizDir, { recursive: true, force: true });
+                    safeLog(`Deleted all student captures for quiz '${quizId}' at:`, targetQuizDir);
+                    deletedCount++;
+                }
+            }
+        }
+
+        return { success: true, deletedCount };
+    } catch (err) {
+        safeLogError("Error deleting quiz captures:", err);
+        return { success: false, error: err.message };
+    }
 });
 
 async function takeScreenShot() {
@@ -276,9 +334,11 @@ async function takeScreenShot() {
 
 ipcMain.handle('start-timer', (event, studentInfo) => {
     if (studentInfo) {
-        currentStudentInfo = {
-            studentName: studentInfo.studentName || studentInfo.name || currentStudentInfo.studentName,
-            studentId: studentInfo.studentId || studentInfo.id || currentStudentInfo.studentId
+        currentExamInfo = {
+            studentName: studentInfo.studentName || studentInfo.name || currentExamInfo.studentName,
+            studentId: studentInfo.studentId || studentInfo.id || currentExamInfo.studentId,
+            quizId: studentInfo.quizId || currentExamInfo.quizId,
+            quizTitle: studentInfo.quizTitle || currentExamInfo.quizTitle
         };
     }
     startTimestamp = Date.now();

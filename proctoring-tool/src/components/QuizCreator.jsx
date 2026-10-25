@@ -11,6 +11,14 @@ export default function QuizCreator({ initialQuiz = null, onSaved, onCancel }) {
   const [questionType, setQuestionType] = useState('MCQ');
   const [timeLimit, setTimeLimit] = useState(initialQuiz?.durationMinutes || 10);
 
+  // Unique Tracking ID to differentiate quizzes even with the same title
+  const [quizTrackingId] = useState(() => {
+    if (initialQuiz?.id) return initialQuiz.id;
+    const cleanTopic = (topic || title || 'quiz').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 20) || 'quiz';
+    const rand = Math.random().toString(36).substring(2, 6);
+    return `${cleanTopic}-${Date.now().toString().slice(-6)}-${rand}`;
+  });
+
   // Time Slot Scheduling State
   const formatDatetimeLocal = (d) => {
     const pad = (n) => String(n).padStart(2, '0');
@@ -211,12 +219,12 @@ export default function QuizCreator({ initialQuiz = null, onSaved, onCancel }) {
 
     try {
       const payload = {
-        id: initialQuiz?.id || quizData.id,
-        title: title.trim() || quizData.title,
-        description: quizData.description || `Assessment on ${topic || title}`,
-        category: topic.trim() || quizData.category || 'Custom',
-        difficulty: quizData.difficulty || difficulty,
-        durationMinutes: Number(timeLimit) || Number(quizData.durationMinutes) || 10,
+        id: initialQuiz?.id || quizData?.id || quizTrackingId,
+        title: title.trim() || quizData?.title,
+        description: quizData?.description || `Assessment on ${topic || title}`,
+        category: topic.trim() || quizData?.category || 'Custom',
+        difficulty: quizData?.difficulty || difficulty,
+        durationMinutes: Number(timeLimit) || Number(quizData?.durationMinutes) || 10,
         schedule: {
           hasSchedule: Boolean(hasSchedule),
           startTime: hasSchedule && slotStartTime ? new Date(slotStartTime).toISOString() : null,
@@ -247,6 +255,13 @@ export default function QuizCreator({ initialQuiz = null, onSaved, onCancel }) {
           <div>
             <h2>✨ AI-Powered Custom Quiz Creator</h2>
             <p>Generate high-quality multiple choice assessments using Grok / Groq AI inference</p>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '4px 10px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '12px', marginTop: '6px' }}>
+              <span style={{ fontWeight: 600, color: '#475569' }}>Quiz Tracking ID:</span>
+              <code style={{ background: '#ffffff', padding: '1px 6px', borderRadius: '4px', border: '1px solid #cbd5e1', fontWeight: 600, color: '#0369a1' }}>
+                {initialQuiz?.id || quizData?.id || quizTrackingId}
+              </code>
+              <span style={{ color: '#64748b', fontSize: '11px' }}>• Distinguishes quizzes with identical titles</span>
+            </div>
           </div>
           <button className="btn btn-outline" onClick={onCancel}>
             ← Back to Quizzes

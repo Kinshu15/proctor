@@ -39,6 +39,9 @@ contextBridge.exposeInMainWorld("athena", {
     storeCameraSnapImageOnDisk: (data) => {
         return ipcRenderer.invoke('store-camera-snap-image-on-disk', data);
     },
+    deleteQuizCaptures: (quizId) => {
+        return ipcRenderer.invoke('delete-quiz-captures', quizId);
+    },
 
     // Functions related to showing Contest Rules in a new Dialog
     showRules: () => {

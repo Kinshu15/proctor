@@ -112,14 +112,17 @@ export default function QuizManager({ onCreateNew, onEditQuiz, onTakeExam, onSwi
     }
   }
 
-  // Delete a quiz
+  // Delete a quiz and all associated student captures
   async function handleDelete(quizId, title) {
-    if (!window.confirm(`Are you sure you want to delete "${title}"? This cannot be undone.`)) {
+    if (!window.confirm(`Are you sure you want to delete "${title}"? All student camera & screen captures for this quiz will be permanently deleted.`)) {
       return;
     }
     try {
+      if (window.athena?.deleteQuizCaptures) {
+        await window.athena.deleteQuizCaptures(quizId);
+      }
       await deleteQuiz(quizId);
-      setSuccessMsg(`Quiz "${title}" deleted.`);
+      setSuccessMsg(`Quiz "${title}" and all associated student captures were deleted.`);
       if (selectedQuiz?.id === quizId) {
         setSelectedQuiz(null);
       }
@@ -362,7 +365,12 @@ export default function QuizManager({ onCreateNew, onEditQuiz, onTakeExam, onSwi
                   >
                     <div className="instructor-card-top">
                       <div>
-                        <span className="quiz-category-tag">{quiz.category || 'General'}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span className="quiz-category-tag">{quiz.category || 'General'}</span>
+                          <span className="mono-id" style={{ fontSize: '10px', color: '#64748b' }}>
+                            ID: {quiz.id}
+                          </span>
+                        </div>
                         <h4 className="instructor-card-title">{quiz.title}</h4>
                       </div>
                       <span className={`status-pill pill-${quiz.status || 'published'}`}>
@@ -405,10 +413,13 @@ export default function QuizManager({ onCreateNew, onEditQuiz, onTakeExam, onSwi
           {/* Quiz Action & Info Banner */}
           <div className="quiz-detail-header-card">
             <div className="quiz-detail-main-info">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
                 <span className="quiz-category-tag">{selectedQuiz.category || 'General'}</span>
                 <span className={`status-pill pill-${selectedQuiz.status || 'published'}`}>
                   {selectedQuiz.status === 'draft' ? '✏️ Draft' : '✓ Published & Live'}
+                </span>
+                <span className="mono-id" style={{ fontSize: '11px', color: '#475569' }}>
+                  ID: {selectedQuiz.id}
                 </span>
               </div>
               <h3 style={{ margin: '0 0 6px 0', fontSize: '20px', color: '#0f172a' }}>
