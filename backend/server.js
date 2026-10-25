@@ -564,8 +564,10 @@ app.post("/exam/start", (req, res) => {
 
   if (quiz.schedule && quiz.schedule.hasSchedule) {
     if (quiz.schedule.startTime && new Date(quiz.schedule.startTime) > now) {
-      withinTimeSlot = false;
-      outOfSlotReason = `Attempt started before scheduled window (${new Date(quiz.schedule.startTime).toLocaleString()})`;
+      return res.status(403).json({
+        message: `This quiz is scheduled to begin at ${new Date(quiz.schedule.startTime).toLocaleString()}. You cannot attempt it before the start time.`,
+        scheduledStartTime: quiz.schedule.startTime,
+      });
     } else if (quiz.schedule.endTime && new Date(quiz.schedule.endTime) < now) {
       withinTimeSlot = false;
       outOfSlotReason = `Attempt started after scheduled window (${new Date(quiz.schedule.endTime).toLocaleString()})`;
@@ -619,6 +621,14 @@ app.get("/exam/mcq", (req, res) => {
     return res.status(404).json({ message: "Quiz not found" });
   }
 
+  if (quiz.schedule && quiz.schedule.hasSchedule && quiz.schedule.startTime) {
+    if (new Date(quiz.schedule.startTime) > new Date()) {
+      return res.status(403).json({
+        message: `This quiz is scheduled to begin at ${new Date(quiz.schedule.startTime).toLocaleString()}. Questions cannot be accessed before start time.`,
+      });
+    }
+  }
+
   res.json((quiz.questions || []).map(questionForStudent));
 });
 
@@ -630,6 +640,14 @@ app.get("/exam/mcq/:id", (req, res) => {
 
   if (!quiz) {
     return res.status(404).json({ message: "Quiz not found" });
+  }
+
+  if (quiz.schedule && quiz.schedule.hasSchedule && quiz.schedule.startTime) {
+    if (new Date(quiz.schedule.startTime) > new Date()) {
+      return res.status(403).json({
+        message: `This quiz is scheduled to begin at ${new Date(quiz.schedule.startTime).toLocaleString()}. Questions cannot be accessed before start time.`,
+      });
+    }
   }
 
   const question = (quiz.questions || []).find((item) => item.id === id);

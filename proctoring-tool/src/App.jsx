@@ -15,6 +15,61 @@ import {
 import QuizCreator from './components/QuizCreator';
 import QuizManager from './components/QuizManager';
 
+function CountdownTimerDisplay({ targetDate }) {
+  const [secondsLeft, setSecondsLeft] = useState(() => {
+    if (!targetDate) return 0;
+    const diff = Math.max(0, new Date(targetDate).getTime() - Date.now());
+    return Math.floor(diff / 1000);
+  });
+
+  useEffect(() => {
+    const tick = () => {
+      if (!targetDate) {
+        setSecondsLeft(0);
+        return;
+      }
+      const diff = Math.max(0, new Date(targetDate).getTime() - Date.now());
+      setSecondsLeft(Math.floor(diff / 1000));
+    };
+
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [targetDate]);
+
+  const hours = Math.floor(secondsLeft / 3600);
+  const minutes = Math.floor((secondsLeft % 3600) / 60);
+  const seconds = secondsLeft % 60;
+  const pad = (n) => String(n).padStart(2, '0');
+
+  if (secondsLeft <= 0) {
+    return (
+      <div className="countdown-live-banner">
+        🎉 The scheduled start time has arrived! The exam is now unlocked.
+      </div>
+    );
+  }
+
+  return (
+    <div className="countdown-clock-container">
+      <div className="countdown-clock-unit">
+        <span className="countdown-digit">{pad(hours)}</span>
+        <span className="countdown-label">Hours</span>
+      </div>
+      <span className="countdown-separator">:</span>
+      <div className="countdown-clock-unit">
+        <span className="countdown-digit">{pad(minutes)}</span>
+        <span className="countdown-label">Minutes</span>
+      </div>
+      <span className="countdown-separator">:</span>
+      <div className="countdown-clock-unit">
+        <span className="countdown-digit">{pad(seconds)}</span>
+        <span className="countdown-label">Seconds</span>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   // App view state: 'setup' | 'quiz' | 'result'
   const [view, setView] = useState('setup');
@@ -22,9 +77,16 @@ function App() {
   // Role Selection State: null (Role select screen) | 'student' | 'instructor'
   const [userRole, setUserRole] = useState(null);
 
-  // Student Flow Steps: 'identity' -> 'quiz' -> 'permissions'
+  // Student Flow Steps: 'identity' -> 'quiz' -> 'permissions' -> 'instructions'
   const [studentStep, setStudentStep] = useState('identity');
   const [studentQuizCategoryFilter, setStudentQuizCategoryFilter] = useState('ongoing'); // 'ongoing' | 'past' | 'all'
+
+  // Global clock ticker for reactive schedule countdowns and slot updates
+  const [nowTime, setNowTime] = useState(Date.now());
+  useEffect(() => {
+    const interval = setInterval(() => setNowTime(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Instructor Flow: 'manage' | 'create'
   const [activeInstructorTab, setActiveInstructorTab] = useState('manage');
@@ -46,9 +108,9 @@ function App() {
   // Helper to check if quiz is within its scheduled time slot
   function getQuizSlotInfo(quiz) {
     if (!quiz?.schedule?.hasSchedule || !quiz.schedule.startTime) {
-      return { hasSlot: false, isCurrent: true, label: 'Open Window / Anytime' };
+      return { hasSlot: false, isCurrent: true, isBefore: false, isAfter: false, label: 'Open Window / Anytime', start: null, end: null };
     }
-    const now = new Date();
+    const now = new Date(nowTime);
     const start = new Date(quiz.schedule.startTime);
     const end = quiz.schedule.endTime ? new Date(quiz.schedule.endTime) : null;
 
@@ -61,7 +123,7 @@ function App() {
     const dateStr = start.toLocaleDateString([], { month: 'short', day: 'numeric' });
 
     let label = `${dateStr}, ${startStr} - ${endStr}`;
-    return { hasSlot: true, isCurrent, isBefore, isAfter, label };
+    return { hasSlot: true, isCurrent, isBefore, isAfter, label, start, end };
   }
 
   // Instructor authentication handler (password: admin 101)
@@ -605,8 +667,16 @@ function App() {
 
 
 
+    const chosenQuiz = quizzes.find((q) => q.id === selectedQuizId) || activeQuizMeta || quizzes[0];
+    const slotInfo = getQuizSlotInfo(chosenQuiz);
+    if (slotInfo.isBefore) {
+      alert(`This examination has not started yet. It is scheduled to begin at ${slotInfo.start ? slotInfo.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : slotInfo.label}.`);
+      return;
+    }
+
     if (!cameraEnabled || !screenSharingEnabled || !fullScreen) {
       alert('Camera, Screen Sharing, and Fullscreen permissions are all required to begin the examination.');
+      setStudentStep('permissions');
       return;
     }
 
@@ -1013,12 +1083,16 @@ function App() {
                       1. Identity
                     </div>
                     <span className="step-arrow">→</span>
-                    <div className={`step-pill ${studentStep === 'quiz' ? 'active' : studentStep === 'permissions' ? 'completed' : ''}`}>
+                    <div className={`step-pill ${studentStep === 'quiz' ? 'active' : (studentStep === 'permissions' || studentStep === 'instructions') ? 'completed' : ''}`}>
                       2. Select Quiz
                     </div>
                     <span className="step-arrow">→</span>
-                    <div className={`step-pill ${studentStep === 'permissions' ? 'active' : ''}`}>
+                    <div className={`step-pill ${studentStep === 'permissions' ? 'active' : studentStep === 'instructions' ? 'completed' : ''}`}>
                       3. Permissions
+                    </div>
+                    <span className="step-arrow">→</span>
+                    <div className={`step-pill ${studentStep === 'instructions' ? 'active' : ''}`}>
+                      4. Instructions
                     </div>
                   </div>
                 </div>
@@ -1100,14 +1174,14 @@ function App() {
                       className={`quiz-filter-tab ${studentQuizCategoryFilter === 'ongoing' ? 'active' : ''}`}
                       onClick={() => setStudentQuizCategoryFilter('ongoing')}
                     >
-                      🟢 Ongoing Quizzes ({quizzes.filter((q) => getQuizSlotInfo(q).isCurrent).length})
+                      🟢 Ongoing & Scheduled ({quizzes.filter((q) => { const s = getQuizSlotInfo(q); return s.isCurrent || s.isBefore; }).length})
                     </button>
                     <button
                       type="button"
                       className={`quiz-filter-tab ${studentQuizCategoryFilter === 'past' ? 'active' : ''}`}
                       onClick={() => setStudentQuizCategoryFilter('past')}
                     >
-                      ⏳ Past / Practice Quizzes ({quizzes.filter((q) => !getQuizSlotInfo(q).isCurrent).length})
+                      ⏳ Past Quizzes ({quizzes.filter((q) => getQuizSlotInfo(q).isAfter).length})
                     </button>
                     <button
                       type="button"
@@ -1123,8 +1197,8 @@ function App() {
                     {(() => {
                       const list = quizzes.filter((q) => {
                         const slot = getQuizSlotInfo(q);
-                        if (studentQuizCategoryFilter === 'ongoing') return slot.isCurrent;
-                        if (studentQuizCategoryFilter === 'past') return !slot.isCurrent;
+                        if (studentQuizCategoryFilter === 'ongoing') return slot.isCurrent || slot.isBefore;
+                        if (studentQuizCategoryFilter === 'past') return slot.isAfter;
                         return true;
                       });
 
@@ -1158,13 +1232,17 @@ function App() {
                                 <span className="compact-chip" style={{ background: '#e0f2fe', color: '#0369a1' }}>
                                   {quiz.category || 'Quiz'}
                                 </span>
-                                {slotInfo.isCurrent ? (
+                                {slotInfo.isBefore ? (
+                                  <span className="badge-tag-slot-scheduled" style={{ fontSize: '9px', padding: '1px 6px' }}>
+                                    ⏳ Scheduled ({slotInfo.start?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})
+                                  </span>
+                                ) : slotInfo.isCurrent ? (
                                   <span className="badge-tag-slot-ok" style={{ fontSize: '9px', padding: '1px 6px' }}>
                                     ✓ Active
                                   </span>
                                 ) : (
                                   <span className="badge-tag-slot-warn" style={{ fontSize: '9px', padding: '1px 6px' }}>
-                                    Practice
+                                    Past
                                   </span>
                                 )}
                               </div>
@@ -1173,7 +1251,7 @@ function App() {
 
                             <div>
                               <div className="compact-card-meta">
-                                <span className="compact-chip">📝 {quiz.questionCount || 5} Qs</span>
+                                <span className="compact-chip">📝 {quiz.questionCount || quiz.questions?.length || 5} Qs</span>
                                 <span className="compact-chip">⏱️ {quiz.durationMinutes || 10}m</span>
                               </div>
                               <div className="compact-card-slot">
@@ -1191,14 +1269,22 @@ function App() {
                     })()}
                   </div>
 
-                  {/* Selected Quiz Practice Notice if Outside Slot */}
+                  {/* Selected Quiz Practice / Scheduled Notice */}
                   {(() => {
                     const chosen = quizzes.find((q) => q.id === selectedQuizId);
+                    if (!chosen) return null;
                     const slotInfo = getQuizSlotInfo(chosen);
-                    if (chosen && !slotInfo.isCurrent) {
+                    if (slotInfo.isBefore) {
+                      return (
+                        <div className="warning-banner" style={{ margin: '16px 0 0', background: '#eff6ff', borderLeft: '4px solid #3b82f6', color: '#1e40af', fontSize: '13px', textAlign: 'left' }}>
+                          <span>⏳ <strong>Scheduled Examination:</strong> "{chosen.title}" is scheduled to begin at <strong>{slotInfo.label}</strong>. You may proceed to grant permissions and review instructions; the exam will unlock at the scheduled start time.</span>
+                        </div>
+                      );
+                    }
+                    if (slotInfo.isAfter) {
                       return (
                         <div className="warning-banner" style={{ margin: '16px 0 0', background: '#fffbeb', borderLeft: '4px solid #f59e0b', color: '#92400e', fontSize: '13px', textAlign: 'left' }}>
-                          <span>⚠️ <strong>Practice Notice:</strong> "{chosen.title}" is scheduled for {slotInfo.label}. You may attempt this quiz now for practice, but your score is marked as Unconsidered and will not appear in official instructor grading.</span>
+                          <span>⚠️ <strong>Practice Notice:</strong> "{chosen.title}" was scheduled for {slotInfo.label}. You may attempt this past quiz for practice, but your score is marked as Unconsidered and will not appear in official instructor grading.</span>
                         </div>
                       );
                     }
@@ -1353,14 +1439,14 @@ function App() {
                     </div>
                   </div>
 
-                  {/* Actions: Begin Examination */}
+                  {/* Actions: Proceed to Instructions */}
                   <div className="minimal-footer-actions" style={{ marginTop: '24px' }}>
                     <button
                       className="btn btn-primary btn-start-large"
-                      disabled={!cameraEnabled || !screenSharingEnabled || !fullScreen || loading}
-                      onClick={handleStartExam}
+                      disabled={!cameraEnabled || !screenSharingEnabled || !fullScreen}
+                      onClick={() => setStudentStep('instructions')}
                     >
-                      {loading ? 'Initializing Exam...' : '🚀 Begin Examination →'}
+                      Next: Review Instructions & Start →
                     </button>
 
                     <button
@@ -1372,6 +1458,165 @@ function App() {
                   </div>
                 </div>
               )}
+
+              {/* STUDENT STEP 4: INSTRUCTIONS & SCHEDULED COUNTDOWN */}
+              {studentStep === 'instructions' && (() => {
+                const currentQuiz = quizzes.find((q) => q.id === selectedQuizId) || activeQuizMeta || quizzes[0];
+                const slotInfo = getQuizSlotInfo(currentQuiz);
+
+                return (
+                  <div className="card-container minimal-setup-card instructions-card">
+                    <div className="header-section" style={{ marginBottom: '20px' }}>
+                      <h1>Step 4: Examination Instructions</h1>
+                      <p>Review the assessment structure and rules carefully before commencing</p>
+                    </div>
+
+                    {/* Candidate & Quiz Header Summary */}
+                    <div className="instructions-quiz-banner">
+                      <div className="instructions-banner-meta">
+                        <span className="compact-chip" style={{ background: '#e0f2fe', color: '#0369a1', fontWeight: 600 }}>
+                          {currentQuiz?.category || 'Assessment'}
+                        </span>
+                        <h3 className="instructions-quiz-title">{currentQuiz?.title || 'Selected Assessment'}</h3>
+                        <p className="instructions-candidate-line">
+                          Candidate: <strong>{studentName}</strong> (ID: <code>{studentId}</code>)
+                        </p>
+                      </div>
+                      <div className="instructions-banner-slot">
+                        {slotInfo.isBefore ? (
+                          <span className="badge-tag-slot-scheduled">
+                            ⏳ Scheduled: {slotInfo.start?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        ) : slotInfo.isCurrent ? (
+                          <span className="badge-tag-slot-ok">
+                            🟢 Live Window Active
+                          </span>
+                        ) : (
+                          <span className="badge-tag-slot-warn">
+                            ⚠️ Practice Window
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Grid: Format, Questions, Duration, Proctoring */}
+                    <div className="instructions-stats-grid">
+                      <div className="instruction-stat-card">
+                        <div className="instruction-stat-icon">📝</div>
+                        <div className="instruction-stat-info">
+                          <span className="instruction-stat-label">Format</span>
+                          <strong className="instruction-stat-value">MCQ (Single Choice)</strong>
+                        </div>
+                      </div>
+
+                      <div className="instruction-stat-card">
+                        <div className="instruction-stat-icon">❓</div>
+                        <div className="instruction-stat-info">
+                          <span className="instruction-stat-label">Total Questions</span>
+                          <strong className="instruction-stat-value">
+                            {currentQuiz?.questions?.length || currentQuiz?.questionCount || 5} Questions
+                          </strong>
+                        </div>
+                      </div>
+
+                      <div className="instruction-stat-card">
+                        <div className="instruction-stat-icon">⏱️</div>
+                        <div className="instruction-stat-info">
+                          <span className="instruction-stat-label">Duration</span>
+                          <strong className="instruction-stat-value">
+                            {currentQuiz?.durationMinutes || 10} Minutes
+                          </strong>
+                        </div>
+                      </div>
+
+                      <div className="instruction-stat-card">
+                        <div className="instruction-stat-icon">🛡️</div>
+                        <div className="instruction-stat-info">
+                          <span className="instruction-stat-label">Proctoring</span>
+                          <strong className="instruction-stat-value">Max 5 Flags (Strict)</strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Exam Rules & Guidelines Card */}
+                    <div className="instructions-guidelines-box">
+                      <h4 className="guidelines-title">⚠️ Examination Rules & Anti-Cheating Protocol</h4>
+                      <ul className="guidelines-list">
+                        <li>
+                          <strong>Stay in Fullscreen:</strong> Exiting fullscreen or defocusing/switching windows logs an immediate integrity flag strike.
+                        </li>
+                        <li>
+                          <strong>Auto-Submit Threshold:</strong> If you accumulate <strong>5 flags</strong>, your exam will automatically submit immediately, and your session will be locked.
+                        </li>
+                        <li>
+                          <strong>Active Monitoring:</strong> Camera and screen feeds are monitored during the exam session to ensure test integrity.
+                        </li>
+                        <li>
+                          <strong>Navigation & Submission:</strong> You may navigate freely between questions. Answers are saved as you choose them. Click "Submit Final Exam" when finished.
+                        </li>
+                      </ul>
+                    </div>
+
+                    {/* Countdown or Active Notice */}
+                    {slotInfo.isBefore ? (
+                      <div className="quiz-countdown-box">
+                        <div className="countdown-header">
+                          <span className="countdown-hourglass">⏳</span>
+                          <div>
+                            <h4 className="countdown-title">Assessment Scheduled For Later</h4>
+                            <p className="countdown-subtitle">
+                              Scheduled start: {slotInfo.start?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({slotInfo.start?.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })})
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Live Digital Countdown Clock */}
+                        <CountdownTimerDisplay targetDate={slotInfo.start} />
+
+                        <div className="countdown-status-hint">
+                          🔒 The <strong>"Begin Quiz"</strong> button is locked until the scheduled start time. It will automatically unlock once the timer reaches zero.
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="active-exam-ready-box">
+                        <div className="active-ready-icon">🟢</div>
+                        <div>
+                          <strong>Assessment Window is Live!</strong>
+                          <p>Your environment is verified and permissions are granted. Click below when you are ready to begin.</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="minimal-footer-actions" style={{ marginTop: '24px' }}>
+                      <button
+                        className="btn btn-primary btn-start-large"
+                        disabled={slotInfo.isBefore || loading}
+                        onClick={handleStartExam}
+                        style={{
+                          opacity: slotInfo.isBefore ? 0.6 : 1,
+                          cursor: slotInfo.isBefore ? 'not-allowed' : 'pointer',
+                        }}
+                      >
+                        {loading ? (
+                          'Initializing Exam...'
+                        ) : slotInfo.isBefore ? (
+                          '⏳ Waiting for Scheduled Start Time...'
+                        ) : (
+                          '🚀 Begin Quiz Now →'
+                        )}
+                      </button>
+
+                      <button
+                        className="btn btn-outline"
+                        onClick={() => setStudentStep('permissions')}
+                      >
+                        ← Back to Permissions
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
             </>
           )}
         </>
