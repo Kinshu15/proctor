@@ -423,14 +423,14 @@ function App() {
     };
   }, [view, sessionId]);
 
-  // Proctoring Flag Recording Handler (Max 5 flags -> auto submit)
+  // Proctoring Flag Recording Handler (Max 5 flags -> auto submit, silent to student)
   const handleRecordFlag = useCallback((reason) => {
     // Strictly disallow flagging once quiz submission starts or once submitted
     if (viewRef.current !== 'quiz' || isAutoSubmittingRef.current || isQuizSubmittedRef.current) return;
 
     const now = Date.now();
-    // 1500ms debounce so exit-fullscreen + blur doesn't increment twice for a single event
-    if (now - lastFlagTimeRef.current < 1500) {
+    // 400ms debounce so window blur/switches are caught immediately
+    if (now - lastFlagTimeRef.current < 400) {
       return;
     }
     lastFlagTimeRef.current = now;
@@ -442,25 +442,11 @@ function App() {
     if (nextCount >= 5) {
       isAutoSubmittingRef.current = true;
       isQuizSubmittedRef.current = true;
-      setFlagWarning({
-        count: 5,
-        reason: reason || 'Maximum 5 flags reached',
-        critical: true,
-      });
-      performSubmitExam(true, `Auto-submitted: 5 flags reached (${reason || 'exited fullscreen or switched windows 5 times'}).`);
-    } else {
-      setFlagWarning({
-        count: nextCount,
-        reason: reason || 'Exited fullscreen or changed window',
-        critical: false,
-      });
-      setTimeout(() => {
-        setFlagWarning((curr) => (curr?.count === nextCount ? null : curr));
-      }, 4500);
+      performSubmitExam(true, `Auto-submitted: 5 integrity violations detected.`);
     }
   }, []);
 
-  // Fullscreen & Window Switch Flag Recording Listeners
+  // High-Frequency Fullscreen & Window Switch Proctoring Listeners
   useEffect(() => {
     function handleFullscreenChange() {
       if (viewRef.current === 'quiz' && !isQuizSubmittedRef.current) {
@@ -478,9 +464,27 @@ function App() {
       }
     }
 
+    function handleVisibilityChange() {
+      if (viewRef.current === 'quiz' && !isQuizSubmittedRef.current) {
+        if (document.visibilityState === 'hidden') {
+          handleRecordFlag('Window / tab hidden');
+        }
+      }
+    }
+
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('blur', handleWindowBlur);
+
+    // High frequency 350ms focus and visibility polling
+    const focusCheckInterval = setInterval(() => {
+      if (viewRef.current === 'quiz' && !isQuizSubmittedRef.current) {
+        if (!document.hasFocus() || document.visibilityState === 'hidden') {
+          handleRecordFlag('Window not focused');
+        }
+      }
+    }, 350);
 
     const removeFullscreenEnter = window.athena?.registerListenerForFullscreenEnter?.(() => {
       setFullScreen(true);
@@ -508,7 +512,9 @@ function App() {
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('blur', handleWindowBlur);
+      clearInterval(focusCheckInterval);
       removeFullscreenEnter?.();
       removeFullscreenExit?.();
       removeWindowBlur?.();
@@ -1768,14 +1774,6 @@ function App() {
                 </span>
               )}
 
-              {/* Flag Counter Pill */}
-              <div
-                className={`flag-counter-pill ${flagCount >= 4 ? 'flag-danger' : flagCount > 0 ? 'flag-warn' : 'flag-normal'}`}
-                title="Flagged when exiting fullscreen or changing windows. Auto-submits on 5 flags."
-              >
-                🚩 Flags: <strong>{flagCount} / 5</strong>
-              </div>
-
               {/* Submit Final Exam Button */}
               <button
                 className="btn btn-submit-exam"
@@ -1787,36 +1785,6 @@ function App() {
               </button>
             </div>
           </div>
-
-          {/* Flag Warning Floating Banner */}
-          {flagWarning && (
-            <div className={`flag-warning-banner ${flagWarning.critical ? 'critical' : ''}`}>
-              <div className="flag-warning-content">
-                <span className="flag-warning-icon">{flagWarning.critical ? '🚨' : '⚠️'}</span>
-                <div>
-                  <strong>
-                    {flagWarning.critical
-                      ? 'Maximum 5 flags reached! Automatically submitting quiz...'
-                      : `Warning: Flag ${flagWarning.count}/5 Recorded`}
-                  </strong>
-                  <p style={{ margin: '2px 0 0 0', fontSize: '12px' }}>
-                    {flagWarning.critical
-                      ? 'Your examination is being finalized and submitted now.'
-                      : `${flagWarning.reason}. Caution: The quiz will automatically submit after 5 flags!`}
-                  </p>
-                </div>
-              </div>
-              {!flagWarning.critical && (
-                <button
-                  type="button"
-                  className="flag-warning-dismiss"
-                  onClick={() => setFlagWarning(null)}
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          )}
 
           {/* Quiz Question Card */}
           <div className="quiz-card">
@@ -1932,13 +1900,10 @@ function App() {
                 <div className="score-label">Final Score</div>
               </div>
 
-              {/* Auto-submission notification if 5 flags were reached */}
-              {(resultData.autoSubmitted || resultData.flagCount >= 5) && (
-                <div style={{ background: '#fef2f2', border: '1.5px solid #fecaca', borderRadius: '10px', padding: '12px 16px', color: '#991b1b', margin: '14px 0', fontSize: '13px', textAlign: 'left', lineHeight: 1.4 }}>
-                  <strong style={{ fontSize: '14px' }}>🚨 Exam Automatically Submitted:</strong>
-                  <p style={{ marginTop: '4px', fontSize: '12px', color: '#b91c1c' }}>
-                    {resultData.autoSubmitReason || 'This exam was automatically submitted because 5 flags were triggered by exiting fullscreen or switching to another window.'}
-                  </p>
+              {/* Auto-submission notification if autoSubmitted */}
+              {resultData.autoSubmitted && (
+                <div style={{ background: '#fef2f2', border: '1.5px solid #fecaca', borderRadius: '10px', padding: '12px 16px', color: '#991b1b', margin: '14px 0', fontSize: '13px', textAlign: 'center', lineHeight: 1.4 }}>
+                  <strong style={{ fontSize: '14px' }}>Examination Finalized & Submitted.</strong>
                 </div>
               )}
 
@@ -1953,7 +1918,7 @@ function App() {
               )}
 
               {/* Score Breakdown Cards */}
-              <div className="score-stats-grid">
+              <div className="score-stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
                 <div className="stat-box">
                   <div className="stat-box-val blue">{attemptedCount} / {totalCount}</div>
                   <div className="stat-box-lbl">Attempted</div>
@@ -1968,23 +1933,9 @@ function App() {
                   <div className="stat-box-val red">{wrongCount}</div>
                   <div className="stat-box-lbl">Wrong</div>
                 </div>
-
-                <div className="stat-box">
-                  <div
-                    className="stat-box-val"
-                    style={{
-                      color: (resultData.flagCount >= 5 || resultData.autoSubmitted)
-                        ? '#dc2626'
-                        : ((resultData.flagCount || 0) > 0 ? '#d97706' : '#16a34a')
-                    }}
-                  >
-                    🚩 {resultData.flagCount !== undefined ? resultData.flagCount : (flagCount || 0)} / 5
-                  </div>
-                  <div className="stat-box-lbl">Flags Incurred</div>
-                </div>
               </div>
 
-              {/* Status Summary (No time taken or scheduled time displayed) */}
+              {/* Status Summary */}
               <div
                 style={{
                   background: '#f8fafc',
@@ -2002,21 +1953,8 @@ function App() {
               >
                 <div>
                   <strong>Status:</strong>{' '}
-                  <span style={{ color: resultData.autoSubmitted ? '#dc2626' : '#16a34a', fontWeight: 'bold' }}>
-                    {resultData.autoSubmitted ? '🚨 Auto-Submitted (5 Flags Reached)' : '✓ Examination Submitted'}
-                  </span>
-                </div>
-                <div>
-                  <strong>Proctoring Flags:</strong>{' '}
-                  <span
-                    style={{
-                      color: (resultData.flagCount >= 5 || resultData.autoSubmitted)
-                        ? '#dc2626'
-                        : ((resultData.flagCount || 0) > 0 ? '#b45309' : '#16a34a'),
-                      fontWeight: 600,
-                    }}
-                  >
-                    🚩 {resultData.flagCount !== undefined ? resultData.flagCount : (flagCount || 0)} / 5 {(resultData.flagCount || 0) === 0 ? '(Clean Session)' : ''}
+                  <span style={{ color: '#16a34a', fontWeight: 'bold' }}>
+                    ✓ Examination Submitted
                   </span>
                 </div>
               </div>

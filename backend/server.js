@@ -445,12 +445,33 @@ app.post("/api/instructor/login", (req, res) => {
   });
 });
 
-// Instructor: Add extra allotted time to a quiz definition
+// Instructor: Add extra allotted time to a quiz definition (ongoing quizzes only)
 app.post("/api/quizzes/:quizId/add-time", (req, res) => {
   const { extraMinutes } = req.body;
   const quiz = getQuizById(req.params.quizId, true);
   if (!quiz) {
     return res.status(404).json({ message: "Quiz not found" });
+  }
+
+  // Check if quiz is currently ongoing (active scheduled slot or active student sessions)
+  const now = new Date();
+  const schedule = quiz.schedule;
+  let isOngoingBySchedule = false;
+  if (schedule && schedule.hasSchedule && schedule.startTime && schedule.endTime) {
+    if (new Date(schedule.startTime) <= now && new Date(schedule.endTime) >= now) {
+      isOngoingBySchedule = true;
+    }
+  }
+
+  const sessions = readSessions();
+  const hasActiveSession = sessions.some(
+    (s) => s.quizId === quiz.id && (s.status === "in-progress" || s.status === "paused" || s.status === "locked")
+  );
+
+  if (!isOngoingBySchedule && !hasActiveSession) {
+    return res.status(400).json({
+      message: `Extra time can only be added to an ongoing assessment. This quiz has no active examinees or is outside its scheduled window.`
+    });
   }
 
   const addMins = Math.max(1, Number(extraMinutes) || 5);
@@ -461,10 +482,9 @@ app.post("/api/quizzes/:quizId/add-time", (req, res) => {
   fs.writeFileSync(targetFile, JSON.stringify(quiz, null, 2));
 
   // Also apply extra time to all ongoing student sessions for this quiz
-  const sessions = readSessions();
   let updatedAny = false;
   sessions.forEach((s) => {
-    if (s.quizId === quiz.id && (s.status === "in-progress" || s.status === "paused")) {
+    if (s.quizId === quiz.id && (s.status === "in-progress" || s.status === "paused" || s.status === "locked")) {
       s.durationMinutes = (Number(s.durationMinutes) || 10) + addMins;
       updatedAny = true;
     }
@@ -480,7 +500,7 @@ app.post("/api/quizzes/:quizId/add-time", (req, res) => {
   });
 });
 
-// Instructor: Add extra time to an active student examination session
+// Instructor: Add extra time to an active student examination session (ongoing sessions only)
 app.post("/api/proctoring/sessions/:sessionId/add-time", (req, res) => {
   const { extraMinutes } = req.body;
   const sessions = readSessions();
@@ -488,6 +508,12 @@ app.post("/api/proctoring/sessions/:sessionId/add-time", (req, res) => {
 
   if (!session) {
     return res.status(404).json({ message: "Session not found" });
+  }
+
+  if (session.status === "submitted" || session.status === "terminated") {
+    return res.status(400).json({
+      message: `Cannot add time to this session because the exam is already completed (${session.status}). Extra time can only be granted to ongoing sessions.`
+    });
   }
 
   const addMins = Math.max(1, Number(extraMinutes) || 5);

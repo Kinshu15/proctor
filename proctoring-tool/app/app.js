@@ -49,15 +49,42 @@ function safeSend(channel, ...args) {
 
 let isQuizLocked = false;
 let forceQuitAllowed = false;
+let focusMonitorInterval = null;
+
+function startFocusMonitor() {
+    if (focusMonitorInterval) clearInterval(focusMonitorInterval);
+    focusMonitorInterval = setInterval(() => {
+        if (isQuizLocked && electronWindow && !electronWindow.isDestroyed()) {
+            try {
+                if (!electronWindow.isFocused()) {
+                    safeSend('window-blur');
+                }
+                const isFs = electronWindow.isFullScreen() || (typeof electronWindow.isSimpleFullScreen === 'function' && electronWindow.isSimpleFullScreen());
+                if (!isFs) {
+                    safeSend('window-fullscreen-exit');
+                }
+            } catch (_) {}
+        }
+    }, 350);
+}
+
+function stopFocusMonitor() {
+    if (focusMonitorInterval) {
+        clearInterval(focusMonitorInterval);
+        focusMonitorInterval = null;
+    }
+}
 
 function lockQuizScreen() {
     isQuizLocked = true;
     forceQuitAllowed = false;
+    startFocusMonitor();
     return { locked: true };
 }
 
 function unlockQuizScreen() {
     isQuizLocked = false;
+    stopFocusMonitor();
     if (electronWindow && !electronWindow.isDestroyed()) {
         try {
             if (electronWindow.isFullScreen()) {
@@ -72,6 +99,7 @@ function unlockQuizScreen() {
 
 function stopAllProctoring() {
     isQuizLocked = false;
+    stopFocusMonitor();
     if (timerInterval) {
         clearInterval(timerInterval);
         timerInterval = null;

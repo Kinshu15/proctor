@@ -445,46 +445,68 @@ export default function QuizManager({ onCreateNew, onEditQuiz, onTakeExam, onSwi
             </div>
 
             {/* Quiz Management Action Buttons */}
-            <div className="quiz-detail-actions-panel">
-              <button
-                className="btn btn-outline"
-                onClick={() => {
-                  setExtraTimeTarget({
-                    type: 'quiz',
-                    id: selectedQuiz.id,
-                    name: selectedQuiz.title,
-                    currentMins: selectedQuiz.durationMinutes || 10
-                  });
-                  setExtraMinutesToAdd(5);
-                }}
-              >
-                ⏱️ + Extra Time
-              </button>
+            {(() => {
+              const now = new Date();
+              const hasSchedule = selectedQuiz.schedule?.hasSchedule;
+              const scheduleOngoing = Boolean(
+                hasSchedule &&
+                selectedQuiz.schedule?.startTime &&
+                selectedQuiz.schedule?.endTime &&
+                new Date(selectedQuiz.schedule.startTime) <= now &&
+                new Date(selectedQuiz.schedule.endTime) >= now
+              );
+              const hasActiveStudent = (sessions || []).some(
+                (s) => s.quizId === selectedQuiz.id && (s.status === 'in-progress' || s.status === 'paused' || s.status === 'locked')
+              );
+              const isQuizOngoing = scheduleOngoing || hasActiveStudent;
 
-              <button
-                className="btn btn-outline"
-                onClick={() => onEditQuiz(selectedQuiz.id)}
-              >
-                ✏️ Edit Quiz
-              </button>
+              return (
+                <div className="quiz-detail-actions-panel">
+                  <button
+                    className="btn btn-outline"
+                    disabled={!isQuizOngoing}
+                    title={!isQuizOngoing ? "Extra time can only be added while an exam is currently ongoing (active examinees or scheduled window)." : "Add extra time to this ongoing quiz"}
+                    style={!isQuizOngoing ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                    onClick={() => {
+                      if (!isQuizOngoing) return;
+                      setExtraTimeTarget({
+                        type: 'quiz',
+                        id: selectedQuiz.id,
+                        name: selectedQuiz.title,
+                        currentMins: selectedQuiz.durationMinutes || 10
+                      });
+                      setExtraMinutesToAdd(5);
+                    }}
+                  >
+                    ⏱️ + Extra Time {isQuizOngoing ? '(Ongoing)' : ''}
+                  </button>
 
-              {selectedQuiz.status === 'draft' && (
-                <button
-                  className="btn btn-primary"
-                  onClick={() => handlePublish(selectedQuiz.id)}
-                >
-                  🚀 Publish
-                </button>
-              )}
+                  <button
+                    className="btn btn-outline"
+                    onClick={() => onEditQuiz(selectedQuiz.id)}
+                  >
+                    ✏️ Edit Quiz
+                  </button>
 
-              <button
-                className="btn btn-outline"
-                style={{ color: '#ef4444', borderColor: '#fca5a5' }}
-                onClick={() => handleDelete(selectedQuiz.id, selectedQuiz.title)}
-              >
-                🗑️ Delete
-              </button>
-            </div>
+                  {selectedQuiz.status === 'draft' && (
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => handlePublish(selectedQuiz.id)}
+                    >
+                      🚀 Publish
+                    </button>
+                  )}
+
+                  <button
+                    className="btn btn-outline"
+                    style={{ color: '#ef4444', borderColor: '#fca5a5' }}
+                    onClick={() => handleDelete(selectedQuiz.id, selectedQuiz.title)}
+                  >
+                    🗑️ Delete
+                  </button>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Scorecard Metrics Row for this quiz */}
